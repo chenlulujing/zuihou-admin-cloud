@@ -1,21 +1,41 @@
 package com.github.zuihou;
 
-import java.lang.reflect.Field;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.TimeInterval;
+import cn.hutool.core.util.ReflectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
+import cn.hutool.log.StaticLog;
+import com.github.zuihou.auth.utils.JwtHelper;
+import com.github.zuihou.auth.utils.JwtUserInfo;
+import com.github.zuihou.auth.utils.Token;
+import com.github.zuihou.authority.dto.auth.VueRouter;
+import com.github.zuihou.authority.dto.core.StationPageDTO;
+import com.github.zuihou.authority.entity.auth.Menu;
+import com.github.zuihou.authority.entity.common.Area;
+import com.github.zuihou.authority.entity.core.Org;
+import com.github.zuihou.authority.entity.core.Station;
+import com.github.zuihou.database.parsers.TableNameParser;
+import com.github.zuihou.injection.annonation.InjectionField;
+import com.github.zuihou.injection.core.InjectionFieldPo;
+import com.github.zuihou.model.RemoteData;
+import com.github.zuihou.utils.TreeUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.map.HashedMap;
+import org.hibernate.validator.HibernateValidator;
+import org.junit.Test;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-
-import com.github.zuihou.auth.utils.JwtHelper;
-import com.github.zuihou.auth.utils.JwtUserInfo;
-import com.github.zuihou.auth.utils.Token;
-import com.github.zuihou.database.parsers.TableNameParser;
-
-import cn.hutool.log.Log;
-import cn.hutool.log.LogFactory;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.HibernateValidator;
-import org.junit.Test;
+import java.lang.reflect.Field;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 没有Spring 环境的测试工具类
@@ -26,24 +46,114 @@ import org.junit.Test;
 @Slf4j
 public class NoBootTest {
 
-    private static Field getField(Class<?> clazz, String fieldName) {
-        if (clazz == null) {
-            return null;
-        }
-        try {
-            Field declaredField = clazz.getDeclaredField(fieldName);
-            if (declaredField != null) {
-                return declaredField;
+    @Test
+    public void test() {
+        TestModel obj = new TestModel();
+        obj.setStation(new RemoteData<>(101L));
+        obj.setOrg2(new RemoteData<>(101L));
+
+        Field[] fields = ReflectUtil.getFields(obj.getClass());
+        for (Field field : fields) {
+            InjectionField anno = field.getDeclaredAnnotation(InjectionField.class);
+            if (anno == null) {
+                continue;
+            }
+            field.setAccessible(true);
+
+            String api = anno.api();
+            Class<?> feign = anno.feign();
+
+            if (StrUtil.isEmpty(api) && Object.class.equals(feign)) {
+                log.warn("忽略注入字段: {}.{}", field.getType(), field.getName());
+                continue;
             }
 
-        } catch (NoSuchFieldException e) {
-            Class<?> superclass = clazz.getSuperclass();
-            if (superclass != null) {
-                return getField(superclass, fieldName);
-            }
+
+        }
+    }
+
+
+    @Test
+
+    public void testFan() {
+        StationPageDTO data = StationPageDTO.builder()
+//                .orgId(new RemoteData<>(123L, Org.builder().id(123L).build()))
+//                .orgId(123L)
+                .name("123").describe("ad")
+                .build();
+        Station station = BeanUtil.toBean(data, Station.class);
+        System.out.println(station);
+    }
+
+    @Test
+    public void testBeanUtil() {
+
+        //10000 - 511
+        //50000 - 719
+        //100000 - 812
+        //1000000 - 2303
+
+        TimeInterval timer = DateUtil.timer();
+        for (int i = 0; i <= 1000000; i++) {
+            Org org = Org.builder()
+                    .name("string")
+                    .id(123L + i)
+                    .createTime(LocalDateTime.now())
+                    .build();
+            Station station = Station.builder().id(1L + i).name("nihaoa").createTime(LocalDateTime.now()).orgId(new RemoteData(12L, org)).build();
+
+            StationPageDTO stationPageDTO = new StationPageDTO();
+
+            BeanUtil.copyProperties(station, stationPageDTO);
         }
 
-        return null;
+        long interval = timer.interval();// 花费毫秒数
+        long intervalMinute = timer.intervalMinute();// 花费分钟数
+        StaticLog.info("本次程序执行 花费毫秒数: {} ,   花费分钟数:{} . ", interval, intervalMinute);
+    }
+
+    @Test
+    public void testBeanUtilToBean() {
+        Menu menu = Menu.builder()
+                .id(123L)
+                .name("menu")
+                .group("group")
+                .createTime(LocalDateTime.MAX)
+                .icon("aicon")
+                .build();
+
+//        VueRouter vueRouter = BeanUtil.toBean(menu, VueRouter.class);
+
+        Map<String, String> map = new HashedMap();
+        map.put("name", "path");
+//        VueRouter vueRouter = BeanUtil.toBean(VueRouter.class, new ValueProvider<String>(){
+//            @Override
+//            public Object value(String key, Type valueType) {
+//                return "1";
+//            }
+//
+//            @Override
+//            public boolean containsKey(String key) {
+//                return true;
+//            }
+//        }, CopyOptions.create().setFieldMapping(map));
+
+        VueRouter vueRouter = new VueRouter();
+        BeanUtil.copyProperties(menu, vueRouter, CopyOptions.create().setFieldMapping(map));
+
+
+        System.out.println(vueRouter);
+    }
+
+
+    @Test
+    public void testFanxin() {
+        Org org = Org.builder().name("ahaha").build();
+        Station station = Station.builder().id(1L).orgId(new RemoteData(12L, org)).build();
+
+        RemoteData orgId = station.getOrg();
+
+        System.out.println(((Org) orgId.getData()).getName());
     }
 
     public static void main(String[] args) {
@@ -53,7 +163,7 @@ public class NoBootTest {
 //        System.out.println(ReflectUtil.getField(MenuTreeDTO.class, field));
 
 
-        String sql ="       SELECT u.id, account, name, mobile, sex\n" +
+        String sql = "       SELECT u.id, account, name, mobile, sex\n" +
                 "FROM c_auth_user\n" +
                 "u\n" +
                 "WHERE 1=1\n" +
@@ -86,6 +196,73 @@ public class NoBootTest {
                 ") ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '资源' ROW_FORMAT = Dynamic;";
         TableNameParser tableNameParser = new TableNameParser(sql);
         tableNameParser.tables().forEach(System.out::println);
+    }
+
+    @Test
+    public void testBuildTree() {
+        List<Area> list = new ArrayList<>();
+
+        Area a1 = Area.builder().id(1L).parentId(0L).build();
+        Area a2 = Area.builder().id(2L).parentId(1L).build();
+        Area a3 = Area.builder().id(3L).parentId(2L).build();
+        Area a4 = Area.builder().id(4L).parentId(3L).build();
+        Area a5 = Area.builder().id(5L).parentId(2L).build();
+        Area a6 = Area.builder().id(6L).parentId(0L).build();
+        Area a7 = Area.builder().id(7L).parentId(6L).build();
+        Area a8 = Area.builder().id(8L).parentId(7L).build();
+
+        list.add(a1);
+        list.add(a2);
+        list.add(a3);
+        list.add(a4);
+        list.add(a5);
+        list.add(a6);
+        list.add(a7);
+        list.add(a8);
+
+        List<Area> tree = TreeUtil.buildTree(list);
+        System.out.println(tree);
+    }
+
+
+    private static Field getField(Class<?> clazz, String fieldName) {
+        if (clazz == null) {
+            return null;
+        }
+        try {
+            Field declaredField = clazz.getDeclaredField(fieldName);
+            if (declaredField != null) {
+                return declaredField;
+            }
+
+        } catch (NoSuchFieldException e) {
+            Class<?> superclass = clazz.getSuperclass();
+            if (superclass != null) {
+                return getField(superclass, fieldName);
+            }
+        }
+
+        return null;
+    }
+
+    @Test
+    public void test2222() {
+        Map<InjectionFieldPo, String> map = new HashedMap();
+
+        InjectionFieldPo a = new InjectionFieldPo();
+        a.setApi("aa");
+        a.setMethod("bb");
+        a.setKey("vv");
+
+        InjectionFieldPo b = new InjectionFieldPo();
+        b.setApi("aa");
+        b.setMethod("bb");
+        b.setKey("aaaa");
+
+        map.put(a, "1");
+        map.put(b, "2");
+
+        System.out.println(map);
     }
 
     @Test

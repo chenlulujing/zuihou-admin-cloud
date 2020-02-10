@@ -1,10 +1,13 @@
 package com.github.zuihou.authority.controller.auth;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.github.zuihou.authority.dto.auth.*;
 import com.github.zuihou.authority.entity.auth.Role;
 import com.github.zuihou.authority.entity.auth.User;
 import com.github.zuihou.authority.entity.core.Org;
+import com.github.zuihou.authority.entity.core.Station;
+import com.github.zuihou.authority.service.auth.ResourceService;
 import com.github.zuihou.authority.service.auth.RoleService;
 import com.github.zuihou.authority.service.auth.UserService;
 import com.github.zuihou.authority.service.core.OrgService;
@@ -14,8 +17,9 @@ import com.github.zuihou.base.R;
 import com.github.zuihou.base.entity.SuperEntity;
 import com.github.zuihou.database.mybatis.conditions.Wraps;
 import com.github.zuihou.database.mybatis.conditions.query.LbqWrapper;
-import com.github.zuihou.dozer.DozerUtils;
+import com.github.zuihou.exception.BizException;
 import com.github.zuihou.log.annotation.SysLog;
+import com.github.zuihou.model.RemoteData;
 import com.github.zuihou.msgs.api.SmsApi;
 import com.github.zuihou.sms.dto.VerificationCodeDTO;
 import com.github.zuihou.sms.enumeration.VerificationCodeType;
@@ -24,6 +28,7 @@ import com.github.zuihou.user.model.SysOrg;
 import com.github.zuihou.user.model.SysRole;
 import com.github.zuihou.user.model.SysStation;
 import com.github.zuihou.user.model.SysUser;
+import com.github.zuihou.utils.BeanPlusUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -35,9 +40,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.github.zuihou.common.constant.BizConstant.DEMO_ORG_ID;
@@ -67,10 +74,11 @@ public class UserController extends BaseController {
     private RoleService roleService;
     @Autowired
     private StationService stationService;
-    @Autowired
-    private DozerUtils dozer;
     @Resource
     private SmsApi smsApi;
+
+    @Autowired
+    private ResourceService resourceService;
 
     /**
      * 分页查询用户
@@ -88,14 +96,14 @@ public class UserController extends BaseController {
     public R<IPage<User>> page(UserPageDTO userPage) {
         IPage<User> page = getPage();
 
-        User user = dozer.map2(userPage, User.class);
-        if (userPage.getOrgId() != null && userPage.getOrgId() >= 0) {
-            user.setOrgId(null);
-        }
+        User user = BeanUtil.toBean(userPage, User.class);
+//        if (userPage.getOrgId() != null && userPage.getOrgId() >= 0) {
+//            user.setOrg(null);
+//        }
         LbqWrapper<User> wrapper = Wraps.lbQ(user);
         if (userPage.getOrgId() != null && userPage.getOrgId() >= 0) {
             List<Org> children = orgService.findChildren(Arrays.asList(userPage.getOrgId()));
-            wrapper.in(User::getOrgId, children.stream().mapToLong(Org::getId).boxed().collect(Collectors.toList()));
+            wrapper.in(User::getOrg, children.stream().map((org) -> new RemoteData(org.getId())).collect(Collectors.toList()));
         }
         wrapper.geHeader(User::getCreateTime, userPage.getStartCreateTime())
                 .leFooter(User::getCreateTime, userPage.getEndCreateTime())
@@ -106,8 +114,6 @@ public class UserController extends BaseController {
                 .eq(User::getSex, userPage.getSex())
                 .eq(User::getStatus, userPage.getStatus())
                 .orderByDesc(User::getId);
-//        userService.page(page, wrapper);
-
         userService.findPage(page, wrapper);
         return success(page);
     }
@@ -144,7 +150,7 @@ public class UserController extends BaseController {
     @PostMapping
     @SysLog("新增用户")
     public R<User> save(@RequestBody @Validated UserSaveDTO data) {
-        User user = dozer.map(data, User.class);
+        User user = BeanUtil.toBean(data, User.class);
         userService.saveUser(user);
         return success(user);
     }
@@ -159,7 +165,7 @@ public class UserController extends BaseController {
     @PutMapping
     @SysLog("修改用户")
     public R<User> update(@RequestBody @Validated(SuperEntity.Update.class) UserUpdateDTO data) {
-        User user = dozer.map(data, User.class);
+        User user = BeanUtil.toBean(data, User.class);
         userService.updateUser(user);
         return success(user);
     }
@@ -168,7 +174,7 @@ public class UserController extends BaseController {
     @PutMapping("/avatar")
     @SysLog("修改头像")
     public R<User> avatar(@RequestBody @Validated(SuperEntity.Update.class) UserUpdateAvatarDTO data) {
-        User user = dozer.map(data, User.class);
+        User user = BeanUtil.toBean(data, User.class);
         userService.updateUser(user);
         return success(user);
     }
@@ -216,18 +222,24 @@ public class UserController extends BaseController {
         if (user == null) {
             return success(null);
         }
-        SysUser sysUser = dozer.map(user, SysUser.class);
+        SysUser sysUser = BeanUtil.toBean(user, SysUser.class);
+
+        sysUser.setOrgId(RemoteData.getKey(user.getOrg()));
+        sysUser.setStationId(RemoteData.getKey(user.getOrg()));
 
         if (query.getFull() || query.getOrg()) {
-            sysUser.setOrg(dozer.map(orgService.getById(user.getOrgId()), SysOrg.class));
+            sysUser.setOrg(BeanUtil.toBean(orgService.getById(user.getOrg()), SysOrg.class));
         }
         if (query.getFull() || query.getStation()) {
-            sysUser.setStation(dozer.map(stationService.getById(user.getStationId()), SysStation.class));
+            Station station = stationService.getById(user.getStation());
+            SysStation sysStation = BeanUtil.toBean(station, SysStation.class);
+            sysStation.setOrgId(RemoteData.getKey(station.getOrg()));
+            sysUser.setStation(sysStation);
         }
 
         if (query.getFull() || query.getRoles()) {
             List<Role> list = roleService.findRoleByUserId(id);
-            sysUser.setRoles(dozer.mapList(list, SysRole.class));
+            sysUser.setRoles(BeanPlusUtil.toBeanList(list, SysRole.class));
         }
 
         return success(sysUser);
@@ -283,11 +295,40 @@ public class UserController extends BaseController {
 
         User user = User.builder()
                 .account(data.getMobile())
-                .name(data.getMobile()).orgId(DEMO_ORG_ID).stationId(DEMO_STATION_ID)
+                .name(data.getMobile()).orgId(new RemoteData<>(DEMO_ORG_ID)).stationId(new RemoteData<>(DEMO_STATION_ID))
                 .mobile(data.getMobile())
                 .password(DigestUtils.md5Hex(data.getPassword()))
                 .build();
         return success(userService.save(user));
+    }
+
+
+    @SysLog("清除缓存并重新加载数据")
+    @ApiOperation(value = "清除缓存并重新加载数据", notes = "清除缓存并重新加载数据")
+    @PostMapping(value = "/reload")
+    public R<LoginDTO> reload(@RequestParam Long userId) throws BizException {
+        User user = userService.getById(userId);
+        if (user == null) {
+            return R.fail("用户不存在");
+        }
+
+        List<com.github.zuihou.authority.entity.auth.Resource> resourceList = this.resourceService.findVisibleResource(ResourceQueryDTO.builder().userId(userId).build());
+        List<String> permissionsList = resourceList.stream().map(com.github.zuihou.authority.entity.auth.Resource::getCode).collect(Collectors.toList());
+
+        return this.success(LoginDTO.builder().user(BeanUtil.toBean(user, UserDTO.class)).permissionsList(permissionsList).token(null).build());
+    }
+
+
+    @ApiOperation(value = "根据id查询用户", notes = "根据id查询用户")
+    @GetMapping("/findUserByIds")
+    public Map<Serializable, Object> findUserByIds(@RequestParam Set<Serializable> codes) {
+        return this.userService.findUserByIds(codes);
+    }
+
+    @ApiOperation(value = "根据id查询用户名称", notes = "根据id查询用户名称")
+    @GetMapping("/findUserNameByIds")
+    public Map<Serializable, Object> findUserNameByIds(@RequestParam Set<Serializable> codes) {
+        return this.userService.findUserNameByIds(codes);
     }
 
 }

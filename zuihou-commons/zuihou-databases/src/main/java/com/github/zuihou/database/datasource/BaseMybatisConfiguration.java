@@ -5,8 +5,6 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.core.parser.ISqlParser;
 import com.baomidou.mybatisplus.extension.parsers.BlockAttackSqlParser;
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
-import com.github.zuihou.base.id.IdGenerate;
-import com.github.zuihou.base.id.SnowflakeIdGenerate;
 import com.github.zuihou.database.mybatis.WriteInterceptor;
 import com.github.zuihou.database.mybatis.typehandler.FullLikeTypeHandler;
 import com.github.zuihou.database.mybatis.typehandler.LeftLikeTypeHandler;
@@ -14,8 +12,6 @@ import com.github.zuihou.database.mybatis.typehandler.RightLikeTypeHandler;
 import com.github.zuihou.database.parsers.DynamicTableNameParser;
 import com.github.zuihou.database.parsers.TenantWebMvcConfigurer;
 import com.github.zuihou.database.properties.DatabaseProperties;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
@@ -75,24 +71,24 @@ public abstract class BaseMybatisConfiguration {
     /**
      * Mybatis Plus 注入器
      *
-     * @param idGenerate
      * @return
      */
     @Bean("myMetaObjectHandler")
-    public MetaObjectHandler getMyMetaObjectHandler(@Qualifier("snowflakeIdGenerate") IdGenerate<Long> idGenerate) {
-        return new MyMetaObjectHandler(idGenerate);
+    public MetaObjectHandler getMyMetaObjectHandler() {
+        DatabaseProperties.Id id = databaseProperties.getId();
+        return new MyMetaObjectHandler(id.getWorkerId(), id.getDataCenterId());
     }
 
-    /**
-     * id生成 机器码， 单机配置1即可。 集群部署，每个实例自增1即可。
-     *
-     * @param machineCode
-     * @return
-     */
-    @Bean("snowflakeIdGenerate")
-    public IdGenerate getIdGenerate(@Value("${id-generator.machine-code:1}") Long machineCode) {
-        return new SnowflakeIdGenerate(machineCode);
-    }
+//    /**
+//     * id生成 机器码， 单机配置1即可。 集群部署，每个实例自增1即可。
+//     *
+//     * @param machineCode
+//     * @return
+//     */
+//    @Bean("snowflakeIdGenerate")
+//    public IdGenerate getIdGenerate(@Value("${id-generator.machine-code:1}") Long machineCode) {
+//        return new SnowflakeIdGenerate(machineCode);
+//    }
 
     /**
      * 租户信息拦截器
@@ -106,7 +102,7 @@ public abstract class BaseMybatisConfiguration {
     }
 
     /**
-     * Mybatis 自定义的类型处理器
+     * Mybatis 自定义的类型处理器： 处理XML中  #{name,typeHandler=leftLike} 类型的参数
      * 用于左模糊查询时使用
      * <p>
      * eg：
@@ -120,7 +116,7 @@ public abstract class BaseMybatisConfiguration {
     }
 
     /**
-     * Mybatis 自定义的类型处理器
+     * Mybatis 自定义的类型处理器： 处理XML中  #{name,typeHandler=rightLike} 类型的参数
      * 用于右模糊查询时使用
      * <p>
      * eg：
@@ -134,7 +130,7 @@ public abstract class BaseMybatisConfiguration {
     }
 
     /**
-     * Mybatis 自定义的类型处理器
+     * Mybatis 自定义的类型处理器： 处理XML中  #{name,typeHandler=fullLike} 类型的参数
      * 用于全模糊查询时使用
      * <p>
      * eg：
@@ -146,4 +142,15 @@ public abstract class BaseMybatisConfiguration {
     public FullLikeTypeHandler getFullLikeTypeHandler() {
         return new FullLikeTypeHandler();
     }
+
+//    /**
+//     * Mybatis 类型处理器： 处理 RemoteData 类型的字段
+//     *
+//     * @return
+//     */
+//    @Bean
+//    public RemoteDataTypeHandler getRemoteDataTypeHandler() {
+//        return new RemoteDataTypeHandler();
+//    }
+
 }

@@ -26,12 +26,10 @@
             <groupId>com.github.zuihou</groupId>
             <artifactId>zuihou-jwt-starter</artifactId>
         </dependency>
-
-        <!--        <dependency>-->
-        <!--            <groupId>io.springfox</groupId>-->
-        <!--            <artifactId>springfox-core</artifactId>-->
-        <!--        </dependency>-->
-
+        <dependency>
+            <groupId>com.github.zuihou</groupId>
+            <artifactId>zuihou-injection-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus</artifactId>

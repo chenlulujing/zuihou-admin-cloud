@@ -18,8 +18,8 @@
             <artifactId>spring-cloud-starter-zipkin</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.amqp</groupId>
-            <artifactId>spring-rabbit</artifactId>
+            <groupId>com.github.zuihou</groupId>
+            <artifactId>zuihou-mq-starter</artifactId>
         </dependency>
     </dependencies>
 </project>
