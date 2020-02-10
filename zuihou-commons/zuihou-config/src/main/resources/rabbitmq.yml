@@ -2,10 +2,10 @@ zuihou:
   rabbitmq:
     # 若系统中有除了zipkin之外的地方使用了mq ，则一定不能设置成false
     enabled: false
-    ip: 127.0.0.1
-    port: 5672
-    username: zuihou
-    password: zuihou
+    ip: 39.100.234.245
+    port: 15672
+    username: san_rabbitmq
+    password: 150658
 
 spring:
   rabbitmq:
