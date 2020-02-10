@@ -1,6 +1,10 @@
 package com.github.zuihou.general.controller;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.extra.servlet.ServletUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
+import cn.hutool.log.StaticLog;
 import com.github.zuihou.authority.entity.core.Org;
 import com.github.zuihou.authority.entity.core.Station;
 import com.github.zuihou.authority.enumeration.auth.ApplicationAppTypeEnum;
@@ -90,6 +94,8 @@ public class AuthorityGeneralController {
     @Value("${server.port}")
     private String port;
 
+    private static final Log hutoolLog = LogFactory.get();
+
     /**
      * 测试网关熔断和超时，
      *
@@ -101,11 +107,50 @@ public class AuthorityGeneralController {
     @SneakyThrows
     public R<Object> test(@RequestParam(value = "millis", defaultValue = "29") Long millis, HttpServletRequest request) {
         String clientIP = ServletUtil.getClientIP(request);
+
         log.info("clientIP={}", clientIP);
 //        this.rabbitTemplate.convertAndSend("aaa", "123");
-        Thread.sleep(millis);
+//        Thread.sleep(millis);
 
+        hutoolLog.info("哈哈={}", clientIP);
+
+        try {
+            int a = 1 / 0;
+        } catch (Exception e) {
+//            log.error("错了{}, {}", "aaa" , "aaa", e);
+
+            hutoolLog.error(e, "hutoolerror ={}", clientIP);
+            System.out.println();
+            String message = ExceptionUtil.getMessage(e);
+
+            System.out.println();
+        }
+
+//        Console.log("");
+        StaticLog.error("aa {} ", 123);
         return R.success(clientIP + "--port=" + this.port);
     }
+
+//    @Autowired
+//    private AttachmentApi attachmentApi;
+//
+//    @ApiOperation(value = "附件上传", notes = "附件上传")
+//    @ApiImplicitParams({
+//            @ApiImplicitParam(name = "isSingle", value = "是否单文件", dataType = "boolean", paramType = "query"),
+//            @ApiImplicitParam(name = "id", value = "文件id", dataType = "long", paramType = "query"),
+//            @ApiImplicitParam(name = "bizId", value = "业务id", dataType = "long", paramType = "query"),
+//            @ApiImplicitParam(name = "bizType", value = "业务类型", dataType = "long", paramType = "query"),
+//            @ApiImplicitParam(name = "file", value = "附件", dataType = "MultipartFile", allowMultiple = true, required = true),
+//    })
+//    @PostMapping(value = "/upload")
+//    @SysLog("上传附件")
+//    public R<AttachmentDTO> upload(
+//            @RequestParam(value = "file") MultipartFile file,
+//            @RequestParam(value = "isSingle", required = false, defaultValue = "false") Boolean isSingle,
+//            @RequestParam(value = "id", required = false) Long id,
+//            @RequestParam(value = "bizId", required = false) String bizId,
+//            @RequestParam(value = "bizType", required = false) String bizType) {
+//        return attachmentApi.upload(file,isSingle, id, bizId, bizType);
+//    }
 
 }

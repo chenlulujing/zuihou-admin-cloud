@@ -1,19 +1,22 @@
 package com.github.zuihou;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.date.TimeInterval;
+import cn.hutool.log.StaticLog;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.github.zuihou.authority.dao.auth.MenuMapper;
 import com.github.zuihou.authority.dao.auth.ResourceMapper;
 import com.github.zuihou.authority.dao.auth.RoleMapper;
 import com.github.zuihou.authority.dao.auth.UserMapper;
+import com.github.zuihou.authority.dao.common.AreaMapper;
+import com.github.zuihou.authority.dao.core.StationMapper;
+import com.github.zuihou.authority.dto.core.StationPageDTO;
 import com.github.zuihou.authority.entity.auth.Resource;
 import com.github.zuihou.authority.entity.auth.User;
 import com.github.zuihou.authority.entity.common.OptLog;
 import com.github.zuihou.authority.entity.core.Org;
+import com.github.zuihou.authority.entity.core.Station;
 import com.github.zuihou.authority.service.auth.ResourceService;
 import com.github.zuihou.authority.service.auth.UserService;
 import com.github.zuihou.authority.service.core.OrgService;
@@ -22,8 +25,8 @@ import com.github.zuihou.database.mybatis.conditions.Wraps;
 import com.github.zuihou.database.mybatis.conditions.query.LbqWrapper;
 import com.github.zuihou.dozer.DozerUtils;
 import com.github.zuihou.log.entity.OptLogDTO;
+import com.github.zuihou.model.RemoteData;
 import com.github.zuihou.utils.NumberHelper;
-
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +34,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
 
 /**
  * 测试类
@@ -61,6 +69,11 @@ public class TestResource {
     private UserService userService;
     @Autowired
     private DozerUtils dozer;
+    @Autowired
+    private AreaMapper areaMapper;
+    @Autowired
+    private StationMapper stationMapper;
+
 
     @Before
     public void setTenant() {
@@ -68,6 +81,64 @@ public class TestResource {
         BaseContextHandler.setDatabase("zuihou_base");
     }
 
+    @Test
+    public void testDozer() {
+        Station station = Station.builder().id(1L).orgId(new RemoteData(12L)).build();
+
+        StationPageDTO stationPageDTO = dozer.map(station, StationPageDTO.class);
+
+        System.out.println(stationPageDTO.getOrgId());
+    }
+
+
+    @Test
+    public void testDozer3333() {
+        Org org = Org.builder()
+                .name("string")
+                .id(123L)
+                .build();
+        Station station = Station.builder().id(1L).orgId(new RemoteData(12L, org)).build();
+
+//        StationPageDTO stationPageDTO = dozer.map(station, StationPageDTO.class);
+        StationPageDTO stationPageDTO = new StationPageDTO();
+        BeanUtil.copyProperties(station, stationPageDTO);
+        System.out.println(stationPageDTO.getOrgId());
+    }
+
+    @Test
+    public void testDozerAndBean() {
+
+        //10000 - 688
+        //50000 - 2130
+        //100000 - 4050  2438
+        //1000000 - 22085   20375
+
+        // 放弃理由
+
+        TimeInterval timer = DateUtil.timer();
+        for (int i = 0; i <= 1000000; i++) {
+            Org org = Org.builder()
+                    .name("string")
+                    .id(123L + i)
+                    .createTime(LocalDateTime.now())
+                    .build();
+            Station station = Station.builder().id(1L + i).name("nihaoa").createTime(LocalDateTime.now()).orgId(new RemoteData(12L, org)).build();
+
+            StationPageDTO stationPageDTO = dozer.map(station, StationPageDTO.class);
+        }
+
+        long interval = timer.interval();// 花费毫秒数
+        long intervalMinute = timer.intervalMinute();// 花费分钟数
+        StaticLog.info("本次程序执行 花费毫秒数: {} ,   花费分钟数:{} . ", interval, intervalMinute);
+    }
+
+
+    @Test
+    public void testDozer2() {
+//        StationPageDTO page = StationPageDTO.builder().orgId(3333L).build();
+//        Station station = dozer.map(page, Station.class);
+//        System.out.println(station.getOrgId());
+    }
 
     @Test
     public void testSaveUser() {
@@ -134,7 +205,7 @@ public class TestResource {
 
     @Test
     public void dozer2Test() {
-        D d = new D();
+        TestModel d = new TestModel();
         d.setD2(new Date());
         d.setDate(LocalDateTime.now());
         D2 opt = dozer.map(d, D2.class);
@@ -174,4 +245,6 @@ public class TestResource {
 
         log.info("{}", list.size());
     }
+
+
 }

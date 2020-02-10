@@ -1,13 +1,15 @@
 package com.github.zuihou.authority.service.auth;
 
-import java.util.List;
-import java.util.Map;
-
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.github.zuihou.authority.dto.auth.UserUpdatePasswordDTO;
 import com.github.zuihou.authority.entity.auth.User;
 import com.github.zuihou.database.mybatis.conditions.query.LbqWrapper;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>
@@ -124,4 +126,20 @@ public interface UserService extends IService<User> {
      * @return
      */
     int resetPassErrorNum(Long id);
+
+    /**
+     * 根据 id 查询用户
+     *
+     * @param ids
+     * @return
+     */
+    Map<Serializable, Object> findUserByIds(Set<Serializable> ids);
+
+    /**
+     * 根据 id 查询用户名称
+     *
+     * @param ids
+     * @return
+     */
+    Map<Serializable, Object> findUserNameByIds(Set<Serializable> ids);
 }

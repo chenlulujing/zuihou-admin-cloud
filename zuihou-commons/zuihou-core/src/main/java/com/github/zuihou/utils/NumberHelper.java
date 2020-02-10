@@ -5,10 +5,13 @@ import java.util.function.Function;
 
 /**
  * 数字类型 帮助类
+ * <p>
+ * 请使用 Convert.toXxx()
  *
  * @author zuihou
  * @date 2018/11/20
  */
+@Deprecated
 public class NumberHelper {
 
     private static <T, R> R valueOfDef(T t, Function<T, R> function, R def) {
@@ -71,6 +74,31 @@ public class NumberHelper {
         return val == null ? def : val;
     }
 
+    /**
+     * 判断object是否为基本类型
+     *
+     * @param object
+     * @return
+     */
+    public static boolean isBaseType(Object object) {
+        if (object == null) {
+            return false;
+        }
+        Class className = object.getClass();
+        if (className.equals(java.lang.Integer.class) ||
+                className.equals(java.lang.Byte.class) ||
+                className.equals(java.lang.Long.class) ||
+                className.equals(java.lang.Double.class) ||
+                className.equals(java.lang.Float.class) ||
+                className.equals(java.lang.Character.class) ||
+                className.equals(java.lang.Short.class) ||
+                className.equals(java.lang.Boolean.class) ||
+                className.equals(java.lang.String.class)
+        ) {
+            return true;
+        }
+        return false;
+    }
 }
 
 
