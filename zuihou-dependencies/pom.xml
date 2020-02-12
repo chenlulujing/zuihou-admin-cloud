@@ -36,10 +36,10 @@
                 <!--当前环境-->
                 <pom.profile.name>dev</pom.profile.name>
                 <!--Nacos配置中心地址-->
-                <pom.nacos.ip>127.0.0.1</pom.nacos.ip>
+                <pom.nacos.ip>39.100.234.245</pom.nacos.ip>
                 <pom.nacos.port>8848</pom.nacos.port>
                 <!--Nacos配置中心命名空间,用于支持多环境.这里必须使用ID，不能使用名称,默认为空-->
-                <pom.nacos.namespace>b16f7baf-56e7-4f4e-a26c-425ee0668016</pom.nacos.namespace>
+                <pom.nacos.namespace>da0e55aa-0651-48d0-9aa4-0af541da0278</pom.nacos.namespace>
                 <pom.seata.namespace></pom.seata.namespace>
                 <!--                <pom.seata.namespace>3bef359b-1ef7-4816-9c31-adb694b90bbe</pom.seata.namespace>-->
             </properties>
