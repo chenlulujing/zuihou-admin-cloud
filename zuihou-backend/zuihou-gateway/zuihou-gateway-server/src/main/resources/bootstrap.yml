@@ -30,7 +30,7 @@ spring:
 
 logging:
   file:
-    path: /data/projects/logs
+    path: /Users/san/work/san/web/zuihou-admin-cloud/data/projects/logs
     name: ${logging.file.path}/${spring.application.name}/root.log
 
 info:
