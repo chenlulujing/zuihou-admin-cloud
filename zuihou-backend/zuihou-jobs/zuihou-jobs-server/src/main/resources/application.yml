@@ -1,6 +1,6 @@
 zuihou:
   ip:
-    mysql: ${MYSQL_IP:127.0.0.1}
+    mysql: ${MYSQL_IP:39.100.234.245}
     executor: ${EXECUTOR_IP:127.0.0.1}
   mysql:
     #    authority:
@@ -15,13 +15,13 @@ zuihou:
     biz-database: zuihou_base
     host: ${zuihou.ip.mysql}
     username: root
-    password: root
+    password: 150658
     port: 3306
     driverClassName: com.mysql.cj.jdbc.Driver
   redis:
-    ip: 127.0.0.1
+    ip: 39.100.234.245
     port: 16379
-    password: SbtyMveYNfLzTks7H0apCmyStPzWJqjy
+    password: 15037115676
   database:
     isBlockAttack: false
     isMultiTenant: true
