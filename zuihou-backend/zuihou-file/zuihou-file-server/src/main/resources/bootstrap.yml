@@ -9,9 +9,9 @@ spring:
   main:
     allow-bean-definition-overriding: true
   application:
-    name: @project.artifactId@
+    name: "@project.artifactId@"
   profiles:
-    active: @pom.profile.name@
+    active: "@pom.profile.name@"
   cloud:
     nacos:
       config:
