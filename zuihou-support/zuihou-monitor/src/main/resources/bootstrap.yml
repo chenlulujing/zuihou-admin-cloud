@@ -1,9 +1,8 @@
 zuihou:
-  local-ip: ${LOCAL_IP:${spring.cloud.client.ip-address}}
   nacos:
-    ip: ${NACOS_IP:@pom.nacos.ip@}
-    port: ${NACOS_PORT:@pom.nacos.port@}
-    namespace: ${NACOS_ID:@pom.nacos.namespace@}
+    ip: ${NACOS_IP:@nacos.ip@}
+    port: ${NACOS_PORT:@nacos.port@}
+    namespace: ${NACOS_ID:@nacos.namespace@}
 
 spring:
   main:
@@ -11,15 +10,20 @@ spring:
   application:
     name: @project.artifactId@
   profiles:
-    active: @pom.profile.name@
+    active: @profile.active@
   cloud:
     nacos:
       config:
         server-addr: ${zuihou.nacos.ip}:${zuihou.nacos.port}
         file-extension: yml
         namespace: ${zuihou.nacos.namespace}
-        shared-dataids: common.yml,rabbitmq.yml
-        refreshable-dataids: common.yml
+        shared-configs:
+          - dataId: common.yml
+            refresh: true
+          - dataId: mysql.yml
+            refresh: true
+          - dataId: rabbitmq.yml
+            refresh: false
       discovery:
         server-addr: ${zuihou.nacos.ip}:${zuihou.nacos.port}
         namespace: ${zuihou.nacos.namespace}
